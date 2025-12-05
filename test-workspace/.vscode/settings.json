@@ -1,0 +1,4 @@
+{
+  "mcpServer.startOnActivate": true,
+  "mcpServer.port": 60100
+}

@@ -1,62 +1,117 @@
 ---
-description: 'VSCode Headless Tunnel MCP Control - Deploys and manages VSCode instances in tunnel mode with MCP integration for AI-driven development.'
-tools: ['edit', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'Azure MCP/*', 'vsc-remote-mcp/*', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'openSimpleBrowser', 'fetch', 'githubRepo', 'extensions', 'todos', 'runSubagent']
+description: 'Deploys containerized VSCode with HTTP MCP server for remote AI control'
+tools: ['edit', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'openSimpleBrowser', 'fetch', 'githubRepo', 'extensions', 'todos', 'runSubagent', 'runTests']
 ---
 
-# VSCode Headless Tunnel MCP Agent
+# VSCode Headless MCP Agent
 
 ## Purpose
 
-This agent helps evaluate, deploy, and manage VSCode instances running in headless tunnel mode, controlled via Model Context Protocol (MCP). It enables AI assistants to interact with remote VSCode environments for automated development, building, and verification workflows.
+Deploy containerized VSCode with HTTP MCP server accessible remotely. Build working solution, not documentation.
 
 ## What This Agent Does
 
 ### Core Capabilities
 
-1. **Project Evaluation**
-   - Analyzes MCP-based VSCode control solutions
-   - Compares deployment approaches (Docker vs Extension)
-   - Provides feature parity analysis between projects
-   - Recommends best solution for specific use cases
+1. **Container Deployment (vsc-remote-mcp)**
+   - Deploy VSCode in Docker containers with custom configurations
+   - Pre-install tools, extensions, and dependencies
+   - Configure resource limits (CPU, memory)
+   - Manage multiple isolated development environments
+   - Support Docker and Podman runtimes
 
-2. **Deployment Assistance**
-   - Generates Docker configurations for pre-configured build environments
-   - Creates launch scripts (PowerShell and Bash) for VSCode CLI in tunnel mode
-   - Sets up MCP server configurations
-   - Configures extension installations
+2. **Code Control (vscode-as-mcp-server)**
+   - **LIMITATION**: Extension tools (text_editor, execute_command) are NOT directly available in this agent session
+   - Extension must be configured as separate MCP server connection in claude_desktop_config.json
+   - Extension HTTP server requires manual activation via browser (http://localhost:8080)
+   - Once activated, external MCP clients can connect via `npx vscode-as-mcp-server`
+   - **This agent can only deploy containers, not control VSCode inside them via extension tools**
 
-3. **Build Environment Setup**
-   - Deploys VSCode instances with pre-installed tools and extensions
-   - Configures environment variables and application metadata
-   - Sets up isolated build environments with resource limits
-   - Enables automated build verification via MCP tools
+3. **Actual Workflow Limitation**
+   - This agent deploys container with pre-configured environment ✅
+   - This agent CANNOT directly use vscode-as-mcp-server extension tools ❌
+   - User must manually connect external MCP client to extension after deployment
+   - Alternative: Use docker exec commands to work inside container (workaround)
 
-4. **Integration Planning**
-   - Designs architectures combining Docker and extension approaches
-   - Plans consolidation of multiple MCP projects
-   - Ensures license compliance (MIT, Apache 2.0)
-   - Creates migration strategies
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Host Machine                            │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │  vsc-remote-mcp (Deployment Layer)                     │ │
+│  │  • Deploys Docker containers                           │ │
+│  │  • Manages instances                                   │ │
+│  │  • Configures environments                             │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                           │                                  │
+│                           ▼                                  │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │         Docker Container (VSCode Instance)              │ │
+│  │  ┌──────────────────────────────────────────────────┐  │ │
+│  │  │  code-server (Browser VSCode)                    │  │ │
+│  │  │  • Node.js environment                           │  │ │
+│  │  │  • Python, C++, etc.                             │  │ │
+│  │  │  • Pre-installed extensions                      │  │ │
+│  │  └──────────────────────────────────────────────────┘  │ │
+│  │  ┌──────────────────────────────────────────────────┐  │ │
+│  │  │  vscode-as-mcp-server Extension                  │  │ │
+│  │  │  • text_editor (create/edit files)               │  │ │
+│  │  │  • execute_command (run terminals)               │  │ │
+│  │  │  • code_checker (get diagnostics)                │  │ │
+│  │  │  • list_directory, preview_url, etc.             │  │ │
+│  │  └──────────────────────────────────────────────────┘  │ │
+│  │                       ▲                                  │ │
+│  └───────────────────────┼──────────────────────────────────┘ │
+│                          │ MCP Protocol                      │
+└──────────────────────────┼───────────────────────────────────┘
+                           │
+                    ┌──────▼──────┐
+                    │  AI Agent   │
+                    │  (Claude)   │
+                    └─────────────┘
+```
 
 ## When to Use This Agent
 
 ✅ **Use this agent when you need to:**
-- Deploy VSCode in tunnel mode for remote AI control
-- Set up pre-configured development/build environments
-- Compare vsc-remote-mcp vs vscode-as-mcp-server approaches
-- Automate build verification workflows via MCP
-- Create Docker-based VSCode instances with specific tools
-- Enable AI assistants (Claude, etc.) to control VSCode
-- Plan consolidation of MCP-based projects
+- Deploy isolated VSCode development environments in containers
+- Have AI write code directly inside those containers via MCP
+- Pre-configure environments with specific tools (Node.js, Python, C++, etc.)
+- Build and test applications in clean, reproducible environments
+- Automate full development workflows from deployment to code generation
 
-## What This Agent Won't Do
+## Deployment Options
 
-❌ **This agent does NOT:**
-- Actually execute Docker commands or deploy containers (provides configs only)
-- Install VSCode or extensions directly (provides scripts/instructions)
-- Modify code in the external projects (read-only analysis)
-- Make deployment decisions without user confirmation
-- Run production systems (focuses on setup and configuration)
-- Handle VSCode UI interactions (works with headless/tunnel mode)
+### Option 1: Basic Deployment (Manual Extension)
+```bash
+# Deploy container
+mcp_vsc-remote-mc_deploy_vscode_instance({
+  name: "dev",
+  workspace_path: "/workspace",
+  port: 8080
+})
+
+# Access at http://localhost:8080
+# Manually install vscode-as-mcp-server extension
+# Configure MCP client to connect to the extension
+```
+
+### Option 2: Pre-configured Deployment (Automated)
+```bash
+# Build custom Docker image with extension pre-installed
+docker build -t vscode-mcp:latest .
+
+# Deploy with custom image
+# Extension automatically available
+# MCP client connects immediately
+```
+
+### Option 3: CLI Installation
+```bash
+# For local VSCode (not containerized)
+code --add-mcp '{"name":"vscode","command":"npx","args":["vscode-as-mcp-server"]}'
+```
 
 ## Ideal Inputs
 
@@ -208,40 +263,45 @@ Would you like detailed instructions for these steps?"
 
 ## Example Workflows
 
-### Workflow 1: Pre-configured Build Environment
+### Workflow 1: Deploy and Code Node.js App (ACTUAL)
 ```
-User: "I need a Python 3.11 environment with pytest pre-installed"
+User: "Create a Node.js Hello World in a container"
 
 Agent:
-1. Creates Dockerfile with Python 3.11
-2. Adds pytest and common dev tools
-3. Generates launch script
-4. Provides testing instructions
-5. Creates example MCP usage code
+1. Deploys container with Node.js pre-installed ✅
+2. CANNOT connect to vscode-as-mcp-server (not available in this session) ❌
+3. Falls back to docker exec commands to create files
+4. Runs code via docker exec node
+5. Returns output to user
+
+NOTE: To use extension's MCP tools, user must:
+- Open http://localhost:8080 to activate extension
+- Configure separate MCP connection: npx vscode-as-mcp-server --server-url http://localhost:60100
+- Then text_editor/execute_command become available to THAT client
 ```
 
-### Workflow 2: Project Comparison
+### Workflow 2: Python Development Environment
 ```
-User: "Which MCP project should I use for my team?"
-
-Agent:
-1. Asks clarifying questions (team size, needs)
-2. Analyzes both projects
-3. Creates comparison matrix
-4. Provides recommendation with reasoning
-5. Offers migration path if switching
-```
-
-### Workflow 3: Consolidation Planning
-```
-User: "Can I merge both projects legally?"
+User: "Set up Python 3.11 environment with pytest"
 
 Agent:
-1. Reads license files
-2. Analyzes compatibility
-3. Creates consolidation proposal
-4. Designs unified structure
-5. Provides implementation timeline
+1. Deploys container with Python 3.11
+2. Pre-installs pytest, pylint extensions
+3. Creates sample test file via text_editor
+4. Runs pytest via execute_command
+5. Shows diagnostics via code_checker
+```
+
+### Workflow 3: Full Build Pipeline
+```
+User: "Build and test a C++ project"
+
+Agent:
+1. Deploys container with GCC, CMake
+2. Uses text_editor to create CMakeLists.txt and main.cpp
+3. Executes: cmake . && make
+4. Runs compiled binary
+5. Captures output and errors
 ```
 
 ## Success Criteria
