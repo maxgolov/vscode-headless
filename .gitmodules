@@ -1,0 +1,6 @@
+[submodule "external/vsc-remote-mcp"]
+	path = external/vsc-remote-mcp
+	url = https://github.com/maxgolov/vsc-remote-mcp.git
+[submodule "external/vscode-as-mcp-server-with-approvals"]
+	path = external/vscode-as-mcp-server-with-approvals
+	url = https://github.com/mikhail-yaskou/vscode-as-mcp-server-with-approvals.git

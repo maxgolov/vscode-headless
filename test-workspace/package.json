@@ -1,0 +1,13 @@
+{
+  "name": "hello-world-test",
+  "version": "1.0.0",
+  "description": "Simple Hello World application created via MCP",
+  "main": "hello.js",
+  "scripts": {
+    "start": "node hello.js",
+    "test": "node hello.js"
+  },
+  "keywords": ["mcp", "hello-world", "test"],
+  "author": "vsc-remote-mcp",
+  "license": "MIT"
+}

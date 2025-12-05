@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "vsc-remote-mcp": {
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/external/vsc-remote-mcp/vscode-remote-mcp/run-mcp-server.js"
+      ]
+    }
+  }
+}
